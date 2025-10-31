@@ -14,7 +14,8 @@ class _AccessibleFormScreenState extends State<AccessibleFormScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
-  
+  final _addressController = TextEditingController();
+
   bool _isLoading = false;
   double _fontSize = 16.0;
 
@@ -23,20 +24,23 @@ class _AccessibleFormScreenState extends State<AccessibleFormScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _phoneController.dispose();
+    _addressController.dispose();
     super.dispose();
   }
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
-      
+      // Feedback auditivo al iniciar el envío
+      AccessibilityUtils.announce(context, 'Enviando formulario');
+
       // Simular procesamiento
       await Future.delayed(const Duration(seconds: 2));
-      
+
       if (mounted) {
         setState(() => _isLoading = false);
         AccessibilityUtils.showAccessibleSnackBar(
-          context, 
+          context,
           'Formulario enviado correctamente',
         );
       }
@@ -61,8 +65,9 @@ class _AccessibleFormScreenState extends State<AccessibleFormScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Semantics(  // QUITÉ EL 'const'
-          header: true,    // CORREGIDO: 'header' en lugar de 'heading'
+        title: Semantics(
+          // QUITÉ EL 'const'
+          header: true, // CORREGIDO: 'header' en lugar de 'heading'
           child: const Text('Formulario Accesible'),
         ),
         actions: [
@@ -89,16 +94,17 @@ class _AccessibleFormScreenState extends State<AccessibleFormScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 // Título semánticamente importante
-                Semantics(  // QUITÉ EL 'const'
-                  header: true,  // CORREGIDO: 'header' en lugar de 'heading'
+                Semantics(
+                  // QUITÉ EL 'const'
+                  header: true, // CORREGIDO: 'header' en lugar de 'heading'
                   child: const Text(
                     'Complete sus datos',
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Campo de nombre
                 Semantics(
                   textField: true,
@@ -123,9 +129,9 @@ class _AccessibleFormScreenState extends State<AccessibleFormScreen> {
                     },
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Campo de email
                 Semantics(
                   textField: true,
@@ -147,16 +153,18 @@ class _AccessibleFormScreenState extends State<AccessibleFormScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Por favor ingrese su email';
                       }
-                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                      if (!RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      ).hasMatch(value)) {
                         return 'Ingrese un email válido';
                       }
                       return null;
                     },
                   ),
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Campo de teléfono
                 Semantics(
                   textField: true,
@@ -182,9 +190,39 @@ class _AccessibleFormScreenState extends State<AccessibleFormScreen> {
                     },
                   ),
                 ),
-                
+                const SizedBox(height: 16),
+
+                // Campo de dirección (nuevo)
+                Semantics(
+                  textField: true,
+                  label: 'Campo de dirección',
+                  hint: 'Ingrese su dirección completa',
+                  child: TextFormField(
+                    controller: _addressController,
+                    decoration: InputDecoration(
+                      labelText: 'Dirección',
+                      hintText: 'Calle, número, ciudad, país',
+                      prefixIcon: const Icon(Icons.location_on),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    keyboardType: TextInputType.streetAddress,
+                    style: TextStyle(fontSize: _fontSize),
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Por favor ingrese su dirección';
+                      }
+                      if (value.trim().length < 10) {
+                        return 'La dirección debe tener al menos 10 caracteres';
+                      }
+                      return null;
+                    },
+                  ),
+                ),
+
                 const SizedBox(height: 32),
-                
+
                 // Botón accesible personalizado
                 AccessibleButton(
                   onPressed: _isLoading ? null : _submitForm,
@@ -192,39 +230,59 @@ class _AccessibleFormScreenState extends State<AccessibleFormScreen> {
                   icon: _isLoading ? Icons.hourglass_top : Icons.send,
                   backgroundColor: Colors.blue,
                   textColor: Colors.white,
+                  announcement:
+                      _isLoading ? 'Envío en curso' : 'Enviar formulario',
+                  announceOnPress: true,
                   fontSize: _fontSize,
                 ),
-                
+
                 const SizedBox(height: 16),
-                
+
                 // Información de accesibilidad
                 Semantics(
                   container: true,
-                  label: 'Información de accesibilidad. Esta aplicación incluye características '
-                         'para usuarios con discapacidades visuales y motoras.',
+                  label:
+                      'Información de accesibilidad. Esta aplicación incluye características '
+                      'para usuarios con discapacidades visuales y motoras.',
                   child: Card(
-                    color: Colors.grey[100],
+                    color: Colors.blue[50],
+                    elevation: 2,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(16),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Semantics(
-                            header: true,  // CORREGIDO
+                            header: true,
                             child: Text(
                               'Características Accesibles:',
                               style: TextStyle(
-                                fontSize: _fontSize,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.blue[800],
+                                fontSize: _fontSize + 2,
+                                fontWeight: FontWeight.w800,
+                                color: Colors.blue[900],
                               ),
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          _buildFeatureItem('✓ Tamaño de texto ajustable', _fontSize),
-                          _buildFeatureItem('✓ Navegación por voz compatible', _fontSize),
-                          _buildFeatureItem('✓ Alto contraste disponible', _fontSize),
-                          _buildFeatureItem('✓ Etiquetas descriptivas', _fontSize),
+                          const SizedBox(height: 12),
+                          _buildFeatureItem(
+                            'Tamaño de texto ajustable',
+                            _fontSize,
+                          ),
+                          _buildFeatureItem(
+                            'Navegación por voz compatible',
+                            _fontSize,
+                          ),
+                          _buildFeatureItem(
+                            'Alto contraste disponible',
+                            _fontSize,
+                          ),
+                          _buildFeatureItem(
+                            'Etiquetas descriptivas',
+                            _fontSize,
+                          ),
                         ],
                       ),
                     ),
@@ -235,7 +293,7 @@ class _AccessibleFormScreenState extends State<AccessibleFormScreen> {
           ),
         ),
       ),
-      
+
       // Botón flotante accesible
       floatingActionButton: Semantics(
         button: true,
@@ -245,8 +303,9 @@ class _AccessibleFormScreenState extends State<AccessibleFormScreen> {
             _nameController.clear();
             _emailController.clear();
             _phoneController.clear();
+            _addressController.clear();
             AccessibilityUtils.showAccessibleSnackBar(
-              context, 
+              context,
               'Formulario limpiado',
             );
           },
@@ -262,10 +321,25 @@ class _AccessibleFormScreenState extends State<AccessibleFormScreen> {
     return Semantics(
       container: true,
       child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 4),
-        child: Text(
-          text,
-          style: TextStyle(fontSize: fontSize - 2),
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 8, top: 2),
+              child: Icon(
+                Icons.check_circle,
+                size: fontSize - 2,
+                color: Colors.green[700],
+              ),
+            ),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(fontSize: fontSize - 1, color: Colors.black87),
+              ),
+            ),
+          ],
         ),
       ),
     );

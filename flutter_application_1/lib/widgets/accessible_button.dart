@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../utils/accessibility_utils.dart';
 
 class AccessibleButton extends StatelessWidget {
   final VoidCallback? onPressed;
@@ -8,6 +9,8 @@ class AccessibleButton extends StatelessWidget {
   final Color textColor;
   final double fontSize;
   final double? width;
+  final String? announcement;
+  final bool announceOnPress;
 
   const AccessibleButton({
     super.key,
@@ -18,10 +21,19 @@ class AccessibleButton extends StatelessWidget {
     this.textColor = Colors.white,
     this.fontSize = 16,
     this.width,
+    this.announcement,
+    this.announceOnPress = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Ajustar contraste: si la combinación solicitada no cumple WCAG AA,
+    // forzar un color de texto legible (blanco) para fondo oscuro.
+    final Color effectiveTextColor =
+        AccessibilityUtils.hasSufficientContrast(backgroundColor, textColor)
+            ? textColor
+            : Colors.white;
+
     return Semantics(
       button: true,
       enabled: onPressed != null,
@@ -32,10 +44,24 @@ class AccessibleButton extends StatelessWidget {
           minHeight: 44, // Altura mínima para accesibilidad táctil
         ),
         child: ElevatedButton(
-          onPressed: onPressed,
+          onPressed:
+              onPressed == null
+                  ? null
+                  : () {
+                    // Ejecutar la acción original
+                    onPressed!();
+                    // Anunciar si se requiere feedback auditivo
+                    if (announceOnPress && announcement != null) {
+                      AccessibilityUtils.announce(
+                        // Usar contexto actual para dirección de texto
+                        context,
+                        announcement!,
+                      );
+                    }
+                  },
           style: ElevatedButton.styleFrom(
             backgroundColor: backgroundColor,
-            foregroundColor: textColor,
+            foregroundColor: effectiveTextColor,
             padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
             textStyle: TextStyle(
               fontSize: fontSize,
